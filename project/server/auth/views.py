@@ -5,6 +5,22 @@ from project.server import bcrypt, db
 from project.server.models import User
 
 auth_blueprint = Blueprint('auth', __name__)
+user_blueprint = Blueprint('user', __name__)
+
+
+class UserAPI(MethodView):
+
+    def get(self):
+        userlist = []
+        for user in User.query.all():
+            userlist.append({
+                'email': user.email,
+                'id': user.id,
+                'registered_on': user.registered_on,
+                'admin': user.admin
+            })
+        return make_response(jsonify(users=userlist)), 201
+
 
 class RegisterAPI(MethodView):
     """
@@ -20,7 +36,7 @@ class RegisterAPI(MethodView):
 
     def post(self):
         # get the post data
-        post_data = request.get_json(); print(request)
+        post_data = request.get_json()
         # check if user already exists
         user = User.query.filter_by(email=post_data.get('email')).first()
         if not user:
@@ -38,7 +54,7 @@ class RegisterAPI(MethodView):
                 responseObject = {
                     'status': 'success',
                     'message': 'Successfully registered.',
-                    'auth_token': auth_token.decode()
+                    'auth_token': auth_token
                 }
                 return make_response(jsonify(responseObject)), 201
             except Exception as e:
@@ -57,10 +73,17 @@ class RegisterAPI(MethodView):
 
 # define the API resources
 registration_view = RegisterAPI.as_view('register_api')
+user_view = UserAPI.as_view('user_api')
 
 # add Rules for API Endpoints
 auth_blueprint.add_url_rule(
     '/auth/register',
     view_func=registration_view,
     methods=['POST', 'GET']
+)
+
+user_blueprint.add_url_rule(
+    '/users/index',
+    view_func=user_view,
+    methods=['GET']
 )
